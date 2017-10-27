@@ -68,13 +68,13 @@ class DQN(object):
     def choose_action(self, x):
         x = Variable(torch.unsqueeze(torch.FloatTensor(x), 0))
         # input only one sample
-        if np.random.uniform() > EPSILON:   # greedy
+        if np.random.uniform() > self.epsilon:   # greedy
             actions_value = self.eval_net.forward(x)
             action = torch.max(actions_value, 1)[1].data.numpy()[0]     # return the argmax
         else:   # random
             action = np.random.randint(0, N_ACTIONS)
         return action
-
+    
     def store_transition(self, s, a, r, s_):
         transition = np.hstack((s, [a, r], s_))
         # replace the old memory with new memory
@@ -118,7 +118,10 @@ for i_episode in range(3000):
         a = dqn.choose_action(s)
         # take action
         s_, r, done, info = env.step(a)
-
+        x, x_dot, theta, theta_dot = s_
+        r1 = (env.x_threshold - abs(x)) / env.x_threshold - 0.8
+        r2 = (env.theta_threshold_radians - abs(theta)) / env.theta_threshold_radians - 0.5
+        r = r1 + r2
         # modify the reward
         dqn.store_transition(s, a, r, s_)
 

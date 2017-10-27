@@ -68,7 +68,7 @@ class Memory:
         return sampled_s, sampled_r, sampled_a, sampled_s_, sampled_done
 
     def isFull(self):
-        return len(self.state) == self.state.maxlen
+        return len(self.memory) == self.memory.maxlen
 
 
 class DQN:
@@ -108,16 +108,15 @@ class DQN:
         
         sampled_s, sampled_a, sampled_r, sampled_s_, sampled_done = self.memory.sample(batch_size=self.batch_size) 
         batch_s = Variable(torch.FloatTensor(sampled_s))
+        batch_s_ = Variable(torch.FloatTensor(sampled_s_))
         batch_a = Variable(torch.LongTensor(sampled_a)).unsqueeze(1)
-        batch_q_eval = self.evaluate_net(batch_s).gather(1, batch_a)
+        batch_r = Variable(torch.FloatTensor(sampled_r)).unsqueeze(1)
+        sampled_done_trans = [not done for done in sampled_done]
+        batch_done = Variable(torch.FloatTensor(sampled_done_trans)).unsqueeze(1)
 
-        target_list = []
-        for s_, r, done in zip(sampled_s_, sampled_r, sampled_done):
-            target = r
-            if not done:
-                target += self.gamma*self.target_net(self._transform_state(s_)).max().data[0]
-            target_list.append(target)
-        batch_q_target = Variable(torch.FloatTensor(target_list).unsqueeze(1))
+        batch_q_eval = self.evaluate_net(batch_s).gather(1, batch_a)
+        batch_q_next = self.target_net(batch_s_).detach()
+        batch_q_target = batch_r + batch_done*GAMMA*batch_q_next.max(1)[0].unsqueeze(1)
 
         self.optimizer.zero_grad()
         loss = self.loss_function(batch_q_eval, batch_q_target)

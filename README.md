@@ -9,3 +9,14 @@ In these implementation, I take [CartPole-v0](https://gym.openai.com/envs/CartPo
 - n1try_dqn.py: collected from gym-CartPole-v0 Ladder: [link](https://gym.openai.com/evaluations/eval_EIcM1ZBnQW2LBaFN6FY65g/)
 - modified_from_n1try_dqn.py: combine transformed reward from morvan's dqn and n1try_dqn.py together.
 - dqn_cartpole.py: implemented by myself.
+
+# Performance
+- condition: env is unwrapped.
+
+- dqn_cartpole.py: it periodly performs badly.
+
+![dqb_cartpole](/result_diagram/dqn_cartpole.png)
+
+- modified_from_n1try_dqn.py
+
+![modified_n1try](/result_diagram/modified_n1try.png)

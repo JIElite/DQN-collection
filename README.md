@@ -14,9 +14,10 @@ In these implementation, I take [CartPole-v0](https://gym.openai.com/envs/CartPo
 - condition: env is unwrapped.
 
 - dqn_cartpole.py: it periodly performs badly.
-
 ![dqb_cartpole](/result_diagram/dqn_cartpole.png)
 
-- modified_from_n1try_dqn.py
+- n1try_dqn.py
+![n1try_dqn](/result_diagram/n1try.png)
 
+- modified_from_n1try_dqn.py
 ![modified_n1try](/result_diagram/modified_n1try.png)

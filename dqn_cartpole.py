@@ -9,19 +9,20 @@ from torch.autograd import Variable
 import matplotlib.pyplot as plt
 
 env = gym.make('CartPole-v0')
+# env = env.unwrapped
 np.random.seed(0)
 
 N_STATES = env.observation_space.shape[0]
 N_ACTIONS = env.action_space.n
-LR = 0.005
+LR = 0.01
 LR_DECAY = 0.01
 MAX_EPISODES = 1000
 MEM_SIZE = 10000
 EPSILON = 1.0
 MIN_EPSILON = 0.05
-EPSILON_DECAY = 0.995
+EPSILON_DECAY = 0.9
 BATCH_SIZE = 64
-GAMMA = 0.9
+GAMMA = 1.0
 ITER_UPDATE_TARGET = 300
 
 use_cuda = torch.cuda.is_available()
@@ -30,6 +31,8 @@ LongTensor = torch.cuda.LongTensor if use_cuda else torch.LongTensor
 ByteTensor = torch.cuda.ByteTensor if use_cuda else torch.ByteTensor
 Tensor = FloatTensor
     
+
+
 
 class Network(nn.Module):
     def __init__(self, input_size, output_size):
@@ -137,6 +140,13 @@ class DQN:
         else:
             self.epsilon = new_epsilon
 
+def transform_reward(env, s_):
+    x, x_dot, theta, theta_dot = s_
+    r1 = (env.x_threshold - abs(x)) / env.x_threshold - 0.8
+    r2 = (env.theta_threshold_radians - abs(theta)) / env.theta_threshold_radians - 0.5
+    r = r1 + r2
+    return r
+
 
 agent = DQN(
     input_size=N_STATES,
@@ -160,10 +170,10 @@ for i_episode in range(MAX_EPISODES):
         # env.render()
         action = agent.select_action(s)
         s_, reward, done, info = env.step(action)
+        
         agent.store_transition(s, action, reward, s_, done)
         s = s_
         agent.learn()
-        
         R += reward
         if done:
             return_list.append(R)

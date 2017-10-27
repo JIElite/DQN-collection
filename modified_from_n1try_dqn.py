@@ -11,6 +11,13 @@ from keras.optimizers import Adam
 import matplotlib.pylab as plt
 
 
+def transform_reward(env, next_state):
+    x, x_dot, theta, theta_dot = next_state
+    r1 = (env.x_threshold - abs(x)) / env.x_threshold - 0.8
+    r2 = (env.theta_threshold_radians - abs(theta)) / env.theta_threshold_radians - 0.5
+    reward = r1 + r2
+    return reward
+
 class DQNCartPoleSolver():
     def __init__(self, n_episodes=1000, n_win_ticks=195, max_env_steps=None, gamma=1.0,
         epsilon=1.0, epsilon_min=0.01, epsilon_log_decay=0.995, alpha=0.01, alpha_decay=0.01,
@@ -78,18 +85,12 @@ class DQNCartPoleSolver():
             i = 0
             R = 0
             while not done:
-                self.env.render()
+                # self.env.render()
                 epsilon = self.get_epsilon(e)
                 action = self.choose_action(state, epsilon)
                 next_state, reward, done, _ = self.env.step(action)
-                s_ = next_state
+                reward = transform_reward(self.env, next_state)
                 next_state = self.preprocess_state(next_state)
-
-                x, x_dot, theta, theta_dot = s_
-                r1 = (self.env.x_threshold - abs(x)) / self.env.x_threshold - 0.8
-                r2 = (self.env.theta_threshold_radians - abs(theta)) / self.env.theta_threshold_radians - 0.5
-                reward = r1 + r2
-                
                 self.remember(state, action, reward, next_state, done)
                 state = next_state
                 i += 1

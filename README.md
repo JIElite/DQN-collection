@@ -11,8 +11,6 @@ In these implementation, I take [CartPole-v0](https://gym.openai.com/envs/CartPo
 - dqn_cartpole.py: implemented by myself.
 
 # Performance
-- condition: env is unwrapped.
-
 - dqn_cartpole.py: it periodly performs badly.
 ![dqb_cartpole](/result_diagram/dqn_cartpole.png)
 

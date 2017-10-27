@@ -12,7 +12,9 @@ import matplotlib.pylab as plt
 
 
 class DQNCartPoleSolver():
-    def __init__(self, n_episodes=1000, n_win_ticks=195, max_env_steps=None, gamma=1.0, epsilon=1.0, epsilon_min=0.01, epsilon_log_decay=0.995, alpha=0.01, alpha_decay=0.01, batch_size=64, monitor=False, quiet=False):
+    def __init__(self, n_episodes=1000, n_win_ticks=195, max_env_steps=None, gamma=1.0,
+        epsilon=1.0, epsilon_min=0.01, epsilon_log_decay=0.995, alpha=0.01, alpha_decay=0.01,
+        batch_size=64, monitor=False, quiet=False):
         self.memory = deque(maxlen=100000)
         self.env = gym.make('CartPole-v0')
         self.env = self.env.unwrapped
@@ -76,7 +78,7 @@ class DQNCartPoleSolver():
             i = 0
             R = 0
             while not done:
-                # self.env.render()
+                self.env.render()
                 epsilon = self.get_epsilon(e)
                 action = self.choose_action(state, epsilon)
                 next_state, reward, done, _ = self.env.step(action)

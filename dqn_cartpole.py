@@ -6,22 +6,23 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from torch.autograd import Variable
+import matplotlib.pyplot as plt
 
 env = gym.make('CartPole-v0')
 np.random.seed(0)
 
 N_STATES = env.observation_space.shape[0]
 N_ACTIONS = env.action_space.n
-LR = 0.01
+LR = 0.005
 LR_DECAY = 0.01
-MAX_EPISODES = 3000
-MEM_SIZE = 100000
+MAX_EPISODES = 1000
+MEM_SIZE = 10000
 EPSILON = 1.0
 MIN_EPSILON = 0.05
-EPSILON_DECAY = 0.9
+EPSILON_DECAY = 0.995
 BATCH_SIZE = 64
 GAMMA = 0.9
-ITER_UPDATE_TARGET = 500
+ITER_UPDATE_TARGET = 300
 
 use_cuda = torch.cuda.is_available()
 FloatTensor = torch.cuda.FloatTensor if use_cuda else torch.FloatTensor
@@ -45,26 +46,25 @@ class Network(nn.Module):
 
 class Memory:
     def __init__(self, maxlen=10000):
-        self.state = deque(maxlen=maxlen)
-        self.reward = deque(maxlen=maxlen)
-        self.action = deque(maxlen=maxlen)
-        self.state_ = deque(maxlen=maxlen)
-        self.done = deque(maxlen=maxlen)
-    
+        self.memory = deque(maxlen=maxlen)
+
     def append(self, s, r, a, s_, done):
-        self.state.append(s)
-        self.reward.append(r)
-        self.action.append(a)
-        self.state_.append(s_)
-        self.done.append(done)
+        self.memory.append((s, r, a, s_, done))
 
     def sample(self, batch_size=32):
-        batch_size = min(batch_size, len(self.state))
-        sampled_s = random.sample(self.state, batch_size)
-        sampled_r = random.sample(self.reward, batch_size)
-        sampled_a = random.sample(self.action, batch_size)
-        sampled_s_ = random.sample(self.state_, batch_size)
-        sampled_done = random.sample(self.done, batch_size)
+        batch_size = min(batch_size, len(self.memory))
+        sampled_experience = random.sample(self.memory, batch_size)
+        sampled_s = []
+        sampled_r = []
+        sampled_a = []
+        sampled_s_ = []
+        sampled_done = []
+        for (s, r, a, s_, done) in sampled_experience:
+            sampled_s.append(s)
+            sampled_r.append(r)
+            sampled_a.append(a)
+            sampled_s_.append(s_)
+            sampled_done.append(done)
         return sampled_s, sampled_r, sampled_a, sampled_s_, sampled_done
 
     def isFull(self):
@@ -108,25 +108,16 @@ class DQN:
         
         sampled_s, sampled_a, sampled_r, sampled_s_, sampled_done = self.memory.sample(batch_size=self.batch_size) 
         batch_s = Variable(torch.FloatTensor(sampled_s))
-        batch_s_ = Variable(torch.FloatTensor(sampled_s_))
         batch_a = Variable(torch.LongTensor(sampled_a)).unsqueeze(1)
-        batch_r = Variable(torch.FloatTensor(sampled_r)).unsqueeze(1)
-        sampled_done_trans = [not done for done in sampled_done]
-        batch_done = Variable(torch.FloatTensor(sampled_done_trans)).unsqueeze(1)
-
         batch_q_eval = self.evaluate_net(batch_s).gather(1, batch_a)
-        batch_q_next = self.target_net(batch_s_).detach()
-        batch_q_target = batch_r + batch_done*GAMMA*batch_q_next.max(1)[0].unsqueeze(1)
-        print(torch.cat((
-            batch_r,
-            batch_done,
-            batch_q_next.max(1)[0].unsqueeze(1),
-            GAMMA*batch_q_next.max(1)[0].unsqueeze(1),
-            batch_done*GAMMA*batch_q_next.max(1)[0].unsqueeze(1),
-            batch_q_target,
-            batch_q_eval,
-        ), 1))
 
+        target_list = []
+        for s_, r, done in zip(sampled_s_, sampled_r, sampled_done):
+            target = r
+            if not done:
+                target += self.gamma*self.target_net(self._transform_state(s_)).max().data[0]
+            target_list.append(target)
+        batch_q_target = Variable(torch.FloatTensor(target_list).unsqueeze(1))
 
         self.optimizer.zero_grad()
         loss = self.loss_function(batch_q_eval, batch_q_target)
@@ -181,6 +172,5 @@ for i_episode in range(MAX_EPISODES):
 
     agent.decay_epsilon()
 
-with open('R_list.txt', 'w') as fd:
-    for R in return_list:
-        fd.write("{}\n".format(R))
+plt.plot(return_list)
+plt.show()
